@@ -5,6 +5,7 @@ import "./App.css";
 const VIEWER_QUERY = gql`
   query GetViewer {
     viewer {
+      id
       login
       name
       avatarUrl
@@ -14,11 +15,12 @@ const VIEWER_QUERY = gql`
 
 function App() {
   const { data, loading, error } = useQuery<{
-    viewer: { login: string; name: string; avatarUrl: string };
+    viewer: { id: string; login: string; name: string; avatarUrl: string };
   }>(VIEWER_QUERY);
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;
+  if (!data) return null;
 
   return (
     <div className="p-8">
