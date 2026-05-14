@@ -1,18 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { graphql } from "@/gql";
+import { VIEWER_QUERY } from "@/graphql/viewer";
 import { useQuery } from "@apollo/client/react";
 import "./App.css";
-
-const VIEWER_QUERY = graphql(`
-  query GetViewer {
-    viewer {
-      id
-      login
-      name
-      avatarUrl
-    }
-  }
-`);
 
 function App() {
   const { data, loading, error, refetch } = useQuery(VIEWER_QUERY);
