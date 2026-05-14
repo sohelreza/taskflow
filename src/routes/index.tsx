@@ -1,9 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { VIEWER_QUERY } from "@/graphql/viewer";
 import { useQuery } from "@apollo/client/react";
-import "./App.css";
+import { createFileRoute } from "@tanstack/react-router";
 
-function App() {
+export const Route = createFileRoute("/")({
+  component: HomePage,
+});
+
+function HomePage() {
   const { data, loading, error, refetch } = useQuery(VIEWER_QUERY);
 
   return (
@@ -53,5 +57,3 @@ function App() {
     </div>
   );
 }
-
-export default App;
