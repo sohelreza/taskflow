@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { gql } from "@apollo/client";
 import { useQuery } from "@apollo/client/react";
 import "./App.css";
@@ -45,12 +46,14 @@ function App() {
             Couldn't load your profile
           </div>
           <div className="text-red-600 text-sm mt-1">{error.message}</div>
-          <button
+          <Button
             onClick={() => refetch()}
-            className="mt-2 px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+            variant="destructive"
+            size="sm"
+            className="mt-2"
           >
             Try again
-          </button>
+          </Button>
         </div>
       )}
 
