@@ -14,9 +14,11 @@ import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-
  * Learn more about it here: https://the-guild.dev/graphql/codegen/plugins/presets/preset-client#reducing-bundle-size
  */
 type Documents = {
+    "\n  query GetRepositories {\n    viewer {\n      repositories(first: 20, orderBy: { field: UPDATED_AT, direction: DESC }) {\n        totalCount\n        pageInfo {\n          hasNextPage\n          endCursor\n        }\n        nodes {\n          id\n          name\n          nameWithOwner\n          description\n          stargazerCount\n          updatedAt\n          primaryLanguage {\n            name\n            color\n          }\n        }\n      }\n    }\n  }\n": typeof types.GetRepositoriesDocument,
     "\n  query GetViewer {\n    viewer {\n      id\n      login\n      name\n      avatarUrl\n    }\n  }\n": typeof types.GetViewerDocument,
 };
 const documents: Documents = {
+    "\n  query GetRepositories {\n    viewer {\n      repositories(first: 20, orderBy: { field: UPDATED_AT, direction: DESC }) {\n        totalCount\n        pageInfo {\n          hasNextPage\n          endCursor\n        }\n        nodes {\n          id\n          name\n          nameWithOwner\n          description\n          stargazerCount\n          updatedAt\n          primaryLanguage {\n            name\n            color\n          }\n        }\n      }\n    }\n  }\n": types.GetRepositoriesDocument,
     "\n  query GetViewer {\n    viewer {\n      id\n      login\n      name\n      avatarUrl\n    }\n  }\n": types.GetViewerDocument,
 };
 
@@ -34,6 +36,10 @@ const documents: Documents = {
  */
 export function graphql(source: string): unknown;
 
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query GetRepositories {\n    viewer {\n      repositories(first: 20, orderBy: { field: UPDATED_AT, direction: DESC }) {\n        totalCount\n        pageInfo {\n          hasNextPage\n          endCursor\n        }\n        nodes {\n          id\n          name\n          nameWithOwner\n          description\n          stargazerCount\n          updatedAt\n          primaryLanguage {\n            name\n            color\n          }\n        }\n      }\n    }\n  }\n"): (typeof documents)["\n  query GetRepositories {\n    viewer {\n      repositories(first: 20, orderBy: { field: UPDATED_AT, direction: DESC }) {\n        totalCount\n        pageInfo {\n          hasNextPage\n          endCursor\n        }\n        nodes {\n          id\n          name\n          nameWithOwner\n          description\n          stargazerCount\n          updatedAt\n          primaryLanguage {\n            name\n            color\n          }\n        }\n      }\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
