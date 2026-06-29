@@ -12,7 +12,7 @@ function HomePage() {
 
   return (
     <div className="p-8">
-      <h1 className="text-3xl font-bold">TaskFlow</h1>
+      <h2 className="text-2xl font-semibold">Welcome</h2>
 
       {loading && (
         <div className="mt-4 flex items-center gap-3">
