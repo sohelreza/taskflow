@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { REPOSITORIES_QUERY } from "@/graphql/repositories";
 import { useQuery } from "@apollo/client/react";
 import { createFileRoute } from "@tanstack/react-router";
@@ -7,9 +8,9 @@ export const Route = createFileRoute("/repos")({
 });
 
 function ReposPage() {
-  const { data, loading, error } = useQuery(REPOSITORIES_QUERY);
+  const { data, loading, error, fetchMore } = useQuery(REPOSITORIES_QUERY);
 
-  if (loading) {
+  if (loading && !data) {
     return (
       <div className="p-8">
         <h2 className="text-2xl font-semibold">Your Repositories</h2>
@@ -29,12 +30,24 @@ function ReposPage() {
 
   const repositories = data?.viewer.repositories.nodes ?? [];
   const totalCount = data?.viewer.repositories.totalCount ?? 0;
+  const pageInfo = data?.viewer.repositories.pageInfo;
+  const hasNextPage = pageInfo?.hasNextPage ?? false;
+  const endCursor = pageInfo?.endCursor;
+
+  const handleLoadMore = () => {
+    if (!endCursor) return;
+    fetchMore({
+      variables: { after: endCursor },
+    });
+  };
 
   return (
     <div className="p-8">
       <div className="flex items-baseline justify-between mb-6">
         <h2 className="text-2xl font-semibold">Your Repositories</h2>
-        <span className="text-sm text-gray-600">{totalCount} total</span>
+        <span className="text-sm text-gray-600">
+          Showing {repositories.length} of {totalCount}
+        </span>
       </div>
 
       {repositories.length === 0 && (
@@ -80,6 +93,14 @@ function ReposPage() {
           );
         })}
       </ul>
+
+      {hasNextPage && (
+        <div className="mt-6 flex justify-center">
+          <Button onClick={handleLoadMore} variant="outline" disabled={loading}>
+            {loading ? "Loading..." : "Load more"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

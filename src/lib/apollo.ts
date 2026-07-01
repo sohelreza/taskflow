@@ -16,7 +16,26 @@ const authLink = new SetContextLink((prevContext, _operation) => {
   };
 });
 
+const cache = new InMemoryCache({
+  typePolicies: {
+    User: {
+      fields: {
+        repositories: {
+          keyArgs: ["orderBy", "affiliations", "ownerAffiliations"],
+          merge(existing, incoming) {
+            if (!existing) return incoming;
+            return {
+              ...incoming,
+              nodes: [...(existing.nodes ?? []), ...(incoming.nodes ?? [])],
+            };
+          },
+        },
+      },
+    },
+  },
+});
+
 export const apolloClient = new ApolloClient({
   link: authLink.concat(httpLink),
-  cache: new InMemoryCache(),
+  cache,
 });

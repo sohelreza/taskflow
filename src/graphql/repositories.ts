@@ -1,9 +1,13 @@
 import { graphql } from "@/gql";
 
 export const REPOSITORIES_QUERY = graphql(`
-  query GetRepositories {
+  query GetRepositories($after: String) {
     viewer {
-      repositories(first: 20, orderBy: { field: UPDATED_AT, direction: DESC }) {
+      repositories(
+        first: 20
+        after: $after
+        orderBy: { field: UPDATED_AT, direction: DESC }
+      ) {
         totalCount
         pageInfo {
           hasNextPage
