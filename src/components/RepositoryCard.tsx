@@ -1,10 +1,16 @@
+import { Link } from "@tanstack/react-router";
+
 type RepositoryCardProps = {
   repo: {
     id: string;
+    name: string;
     nameWithOwner: string;
     description?: string | null;
     stargazerCount: number;
     updatedAt: string;
+    owner: {
+      login: string;
+    };
     primaryLanguage?: {
       name: string;
       color?: string | null;
@@ -12,12 +18,18 @@ type RepositoryCardProps = {
   };
 };
 
-export function RepositoryCard({ repo }: Readonly<RepositoryCardProps>) {
+export function RepositoryCard({ repo }: RepositoryCardProps) {
   return (
     <div className="p-4 border border-gray-200 rounded hover:border-gray-300 transition-colors">
       <div className="flex items-baseline justify-between">
-        <h3 className="font-medium text-blue-700 hover:underline">
-          {repo.nameWithOwner}
+        <h3 className="font-medium">
+          <Link
+            to="/repos/$owner/$name"
+            params={{ owner: repo.owner.login, name: repo.name }}
+            className="text-blue-700 hover:underline"
+          >
+            {repo.nameWithOwner}
+          </Link>
         </h3>
         <span className="text-sm text-gray-600">★ {repo.stargazerCount}</span>
       </div>

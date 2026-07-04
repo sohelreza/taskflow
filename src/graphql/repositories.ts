@@ -3,6 +3,7 @@ import { graphql } from "@/gql";
 export const REPOSITORIES_QUERY = graphql(`
   query GetRepositories($after: String) {
     viewer {
+      id
       repositories(
         first: 20
         after: $after
@@ -20,6 +21,9 @@ export const REPOSITORIES_QUERY = graphql(`
           description
           stargazerCount
           updatedAt
+          owner {
+            login
+          }
           primaryLanguage {
             name
             color
