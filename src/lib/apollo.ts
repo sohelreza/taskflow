@@ -32,6 +32,20 @@ const cache = new InMemoryCache({
         },
       },
     },
+    Repository: {
+      fields: {
+        issues: {
+          keyArgs: ["orderBy", "states", "labels"],
+          merge(existing, incoming) {
+            if (!existing) return incoming;
+            return {
+              ...incoming,
+              nodes: [...(existing.nodes ?? []), ...(incoming.nodes ?? [])],
+            };
+          },
+        },
+      },
+    },
   },
 });
 

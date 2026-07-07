@@ -1,3 +1,6 @@
+import { IssueList } from "@/components/IssueList";
+import { Button } from "@/components/ui/button";
+import { ISSUES_QUERY } from "@/graphql/issues";
 import { REPOSITORY_QUERY } from "@/graphql/repository";
 import { useQuery } from "@apollo/client/react";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -8,7 +11,17 @@ export const Route = createFileRoute("/repos_/$owner/$name")({
 
 function RepositoryDetailPage() {
   const { owner, name } = Route.useParams();
+
   const { data, loading, error } = useQuery(REPOSITORY_QUERY, {
+    variables: { owner, name },
+  });
+
+  const {
+    data: issuesData,
+    loading: issuesLoading,
+    error: issuesError,
+    fetchMore: fetchMoreIssues,
+  } = useQuery(ISSUES_QUERY, {
     variables: { owner, name },
   });
 
@@ -37,6 +50,18 @@ function RepositoryDetailPage() {
   }
 
   const repo = data.repository;
+  const issues = issuesData?.repository?.issues.nodes ?? [];
+  const totalIssues = issuesData?.repository?.issues.totalCount ?? 0;
+  const issuesPageInfo = issuesData?.repository?.issues.pageInfo;
+  const hasMoreIssues = issuesPageInfo?.hasNextPage ?? false;
+  const issuesEndCursor = issuesPageInfo?.endCursor;
+
+  const handleLoadMoreIssues = () => {
+    if (!issuesEndCursor) return;
+    fetchMoreIssues({
+      variables: { after: issuesEndCursor },
+    });
+  };
 
   return (
     <div className="p-8 max-w-3xl">
@@ -82,7 +107,7 @@ function RepositoryDetailPage() {
         </div>
       </div>
 
-      <div className="flex gap-3 text-sm">
+      <div className="flex gap-3 text-sm mb-8">
         <a
           href={repo.url}
           target="_blank"
@@ -103,8 +128,37 @@ function RepositoryDetailPage() {
         )}
       </div>
 
-      <div className="mt-8">
-        <p className="text-gray-600">Issues coming next commit.</p>
+      <div>
+        <div className="flex items-baseline justify-between mb-3">
+          <h2 className="text-xl font-semibold">Issues</h2>
+          <span className="text-sm text-gray-600">
+            {issues.length} of {totalIssues}
+          </span>
+        </div>
+
+        {issuesLoading && issues.length === 0 && (
+          <p className="text-gray-600">Loading issues...</p>
+        )}
+
+        {issuesError && (
+          <p className="text-red-600">
+            Error loading issues: {issuesError.message}
+          </p>
+        )}
+
+        {!issuesLoading && !issuesError && <IssueList issues={issues} />}
+
+        {hasMoreIssues && (
+          <div className="mt-4 flex justify-center">
+            <Button
+              onClick={handleLoadMoreIssues}
+              variant="outline"
+              disabled={issuesLoading}
+            >
+              {issuesLoading ? "Loading..." : "Load more issues"}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
