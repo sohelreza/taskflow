@@ -24,10 +24,10 @@ type Issue = {
 };
 
 type IssueListProps = {
-  issues: Array<Issue | null>;
+  issues: Issue[];
 };
 
-export function IssueList({ issues }: Readonly<IssueListProps>) {
+export function IssueList({ issues }: IssueListProps) {
   if (issues.length === 0) {
     return <p className="text-gray-600">No issues found.</p>;
   }
@@ -35,7 +35,6 @@ export function IssueList({ issues }: Readonly<IssueListProps>) {
   return (
     <ul className="divide-y divide-gray-200 border border-gray-200 rounded overflow-hidden">
       {issues.map((issue) => {
-        if (!issue) return null;
         const labelNodes = issue.labels?.nodes ?? [];
         return (
           <li key={issue.id} className="p-4 bg-white hover:bg-gray-50">
@@ -87,7 +86,7 @@ export function IssueList({ issues }: Readonly<IssueListProps>) {
   );
 }
 
-function StateIcon({ state }: Readonly<{ state: "OPEN" | "CLOSED" }>) {
+function StateIcon({ state }: { state: "OPEN" | "CLOSED" }) {
   const color = state === "OPEN" ? "text-green-600" : "text-purple-600";
   return (
     <span className={`inline-block mt-1 ${color}`} title={state.toLowerCase()}>

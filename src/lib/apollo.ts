@@ -46,6 +46,20 @@ const cache = new InMemoryCache({
         },
       },
     },
+    Query: {
+      fields: {
+        search: {
+          keyArgs: ["query", "type"],
+          merge(existing, incoming) {
+            if (!existing) return incoming;
+            return {
+              ...incoming,
+              nodes: [...(existing.nodes ?? []), ...(incoming.nodes ?? [])],
+            };
+          },
+        },
+      },
+    },
   },
 });
 

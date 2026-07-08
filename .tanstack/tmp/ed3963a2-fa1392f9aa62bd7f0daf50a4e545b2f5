@@ -107,11 +107,9 @@ function RepositoryDetailPage() {
   const repo = data.repository;
 
   const activeSearch = Boolean(q);
-  const issues: IssueShape[] = activeSearch
-    ? (searchData?.search.nodes ?? []).flatMap((n) => (isIssue(n) ? [n] : []))
-    : (issuesData?.repository?.issues.nodes ?? []).flatMap((n) =>
-        isIssue(n) ? [n] : [],
-      );
+  const issues: Array<IssueShape | null> = activeSearch
+    ? (searchData?.search.nodes ?? []).filter(isIssue)
+    : (issuesData?.repository?.issues.nodes ?? []);
   const totalIssues = activeSearch
     ? (searchData?.search.issueCount ?? 0)
     : (issuesData?.repository?.issues.totalCount ?? 0);
