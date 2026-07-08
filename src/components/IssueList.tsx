@@ -27,7 +27,7 @@ type IssueListProps = {
   issues: Issue[];
 };
 
-export function IssueList({ issues }: IssueListProps) {
+export function IssueList({ issues }: Readonly<IssueListProps>) {
   if (issues.length === 0) {
     return <p className="text-gray-600">No issues found.</p>;
   }
@@ -86,7 +86,7 @@ export function IssueList({ issues }: IssueListProps) {
   );
 }
 
-function StateIcon({ state }: { state: "OPEN" | "CLOSED" }) {
+function StateIcon({ state }: Readonly<{ state: "OPEN" | "CLOSED" }>) {
   const color = state === "OPEN" ? "text-green-600" : "text-purple-600";
   return (
     <span className={`inline-block mt-1 ${color}`} title={state.toLowerCase()}>
