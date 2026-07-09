@@ -7,8 +7,25 @@ import { useQuery } from "@apollo/client/react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
+type IssueStateFilter = "open" | "closed" | "all";
+
+function toGraphQLStates(
+  state: IssueStateFilter | undefined,
+): Array<"OPEN" | "CLOSED"> {
+  if (state === "closed") return ["CLOSED"];
+  if (state === "all") return ["OPEN", "CLOSED"];
+  return ["OPEN"];
+}
+
+function toSearchQualifier(state: IssueStateFilter | undefined): string {
+  if (state === "all") return "";
+  if (state === "closed") return "is:closed ";
+  return "is:open ";
+}
+
 type IssuesSearch = {
   q?: string;
+  state?: IssueStateFilter;
 };
 
 type IssueShape = {
@@ -38,15 +55,21 @@ function isIssue(node: unknown): node is IssueShape {
 export const Route = createFileRoute("/repos_/$owner/$name")({
   component: RepositoryDetailPage,
   validateSearch: (search: Record<string, unknown>): IssuesSearch => {
+    const validStates: IssueStateFilter[] = ["open", "closed", "all"];
     return {
       q: typeof search.q === "string" ? search.q : undefined,
+      state:
+        typeof search.state === "string" &&
+        (validStates as string[]).includes(search.state)
+          ? (search.state as IssueStateFilter)
+          : undefined,
     };
   },
 });
 
 function RepositoryDetailPage() {
   const { owner, name } = Route.useParams();
-  const { q } = Route.useSearch();
+  const { q, state } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
 
   const handleSearchCommit = (value: string) => {
@@ -56,18 +79,34 @@ function RepositoryDetailPage() {
     });
   };
 
+  const handleStateChange = (newState: IssueStateFilter | undefined) => {
+    navigate({
+      search: (prev) => ({ ...prev, state: newState }),
+      replace: true,
+    });
+  };
+
+  // Compute GraphQL state filter
+  const issueStates = toGraphQLStates(state);
+
+  const searchQualifier = q
+    ? `repo:${owner}/${name} is:issue ${toSearchQualifier(state)}${q}`
+    : "";
+
+  const searchQuery = q
+    ? `repo:${owner}/${name} is:issue ${searchQualifier}${q}`
+    : "";
+
   const { data, loading, error } = useQuery(REPOSITORY_QUERY, {
     variables: { owner, name },
   });
-
-  const searchQuery = q ? `repo:${owner}/${name} is:issue ${q}` : "";
 
   const {
     data: issuesData,
     loading: issuesLoading,
     fetchMore: fetchMoreIssues,
   } = useQuery(ISSUES_QUERY, {
-    variables: { owner, name },
+    variables: { owner, name, states: issueStates },
     skip: Boolean(q),
   });
 
@@ -204,6 +243,24 @@ function RepositoryDetailPage() {
           </span>
         </div>
 
+        <div className="flex gap-1 mb-3 border-b border-gray-200">
+          <FilterTab
+            label="Open"
+            active={!state || state === "open"}
+            onClick={() => handleStateChange(undefined)}
+          />
+          <FilterTab
+            label="Closed"
+            active={state === "closed"}
+            onClick={() => handleStateChange("closed")}
+          />
+          <FilterTab
+            label="All"
+            active={state === "all"}
+            onClick={() => handleStateChange("all")}
+          />
+        </div>
+
         <IssueSearchInput
           key={q ?? ""}
           initialValue={q ?? ""}
@@ -235,10 +292,10 @@ function RepositoryDetailPage() {
 function IssueSearchInput({
   initialValue,
   onCommit,
-}: {
+}: Readonly<{
   initialValue: string;
   onCommit: (value: string) => void;
-}) {
+}>) {
   const [value, setValue] = useState(initialValue);
 
   useEffect(() => {
@@ -258,5 +315,28 @@ function IssueSearchInput({
       placeholder="Search issues..."
       className="w-full mb-4 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
     />
+  );
+}
+
+function FilterTab({
+  label,
+  active,
+  onClick,
+}: Readonly<{
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}>) {
+  return (
+    <button
+      onClick={onClick}
+      className={
+        active
+          ? "px-4 py-2 text-sm font-medium border-b-2 border-blue-600 text-blue-600 -mb-px"
+          : "px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900"
+      }
+    >
+      {label}
+    </button>
   );
 }
