@@ -10,26 +10,7 @@ export const SEARCH_ISSUES_QUERY = graphql(`
       }
       nodes {
         ... on Issue {
-          id
-          number
-          title
-          state
-          createdAt
-          updatedAt
-          author {
-            login
-            avatarUrl
-          }
-          labels(first: 5) {
-            nodes {
-              id
-              name
-              color
-            }
-          }
-          comments {
-            totalCount
-          }
+          ...IssueCard
         }
       }
     }
