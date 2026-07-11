@@ -1,4 +1,5 @@
 import { IssueList } from "@/components/IssueList";
+import { NewIssueDialog } from "@/components/NewIssueDialog";
 import { Button } from "@/components/ui/button";
 import { ISSUES_QUERY } from "@/graphql/issues";
 import { REPOSITORY_QUERY } from "@/graphql/repository";
@@ -237,10 +238,13 @@ function RepositoryDetailPage() {
 
       <div>
         <div className="flex items-baseline justify-between mb-3">
-          <h2 className="text-xl font-semibold">Issues</h2>
-          <span className="text-sm text-gray-600">
-            {issues.length} of {totalIssues}
-          </span>
+          <div className="flex items-baseline gap-3">
+            <h2 className="text-xl font-semibold">Issues</h2>
+            <span className="text-sm text-gray-600">
+              {issues.length} of {totalIssues}
+            </span>
+          </div>
+          <NewIssueDialog owner={owner} name={name} />
         </div>
 
         <div className="flex gap-1 mb-3 border-b border-gray-200">
