@@ -11,6 +11,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { CREATE_ISSUE_MUTATION } from "@/graphql/createIssue";
+import { ISSUES_QUERY } from "@/graphql/issues";
+import { useMutation } from "@apollo/client/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -29,32 +32,67 @@ type NewIssueFormValues = z.infer<typeof newIssueSchema>;
 type NewIssueDialogProps = {
   owner: string;
   name: string;
+  repositoryId: string;
 };
 
-export function NewIssueDialog({ owner, name }: Readonly<NewIssueDialogProps>) {
+export function NewIssueDialog({
+  owner,
+  name,
+  repositoryId,
+}: NewIssueDialogProps) {
   const [open, setOpen] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const [createIssue, { loading: mutationLoading }] = useMutation(
+    CREATE_ISSUE_MUTATION,
+    {
+      refetchQueries: [
+        {
+          query: ISSUES_QUERY,
+          variables: { owner, name, states: ["OPEN"] },
+        },
+      ],
+      awaitRefetchQueries: true,
+    },
+  );
 
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isValid, isSubmitting },
+    formState: { errors, isValid },
   } = useForm<NewIssueFormValues>({
     resolver: zodResolver(newIssueSchema),
     mode: "onChange",
   });
 
-  const onSubmit = (values: NewIssueFormValues) => {
-    // Mutation wiring comes in the next commit
-    console.log("Would create issue:", values);
-    reset();
-    setOpen(false);
+  const onSubmit = async (values: NewIssueFormValues) => {
+    setSubmitError(null);
+    try {
+      await createIssue({
+        variables: {
+          input: {
+            repositoryId,
+            title: values.title,
+            body: values.body || undefined,
+          },
+        },
+      });
+      reset();
+      setOpen(false);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to create issue";
+      setSubmitError(message);
+    }
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
+    if (mutationLoading) return;
     setOpen(nextOpen);
     if (!nextOpen) {
       reset();
+      setSubmitError(null);
     }
   };
 
@@ -79,6 +117,7 @@ export function NewIssueDialog({ owner, name }: Readonly<NewIssueDialogProps>) {
                 id="title"
                 placeholder="Brief summary of the issue"
                 autoFocus
+                disabled={mutationLoading}
                 {...register("title")}
               />
               {errors.title && (
@@ -92,12 +131,19 @@ export function NewIssueDialog({ owner, name }: Readonly<NewIssueDialogProps>) {
                 id="body"
                 placeholder="More details about the issue..."
                 rows={5}
+                disabled={mutationLoading}
                 {...register("body")}
               />
               {errors.body && (
                 <p className="text-sm text-red-600">{errors.body.message}</p>
               )}
             </div>
+
+            {submitError && (
+              <div className="p-3 border border-red-200 bg-red-50 rounded text-sm text-red-700">
+                {submitError}
+              </div>
+            )}
           </div>
 
           <DialogFooter>
@@ -105,12 +151,12 @@ export function NewIssueDialog({ owner, name }: Readonly<NewIssueDialogProps>) {
               type="button"
               variant="outline"
               onClick={() => handleOpenChange(false)}
-              disabled={isSubmitting}
+              disabled={mutationLoading}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={!isValid || isSubmitting}>
-              {isSubmitting ? "Creating..." : "Create issue"}
+            <Button type="submit" disabled={!isValid || mutationLoading}>
+              {mutationLoading ? "Creating..." : "Create issue"}
             </Button>
           </DialogFooter>
         </form>

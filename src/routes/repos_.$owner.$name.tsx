@@ -244,7 +244,7 @@ function RepositoryDetailPage() {
               {issues.length} of {totalIssues}
             </span>
           </div>
-          <NewIssueDialog owner={owner} name={name} />
+          <NewIssueDialog owner={owner} name={name} repositoryId={repo.id} />
         </div>
 
         <div className="flex gap-1 mb-3 border-b border-gray-200">
