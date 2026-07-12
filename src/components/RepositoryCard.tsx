@@ -18,7 +18,7 @@ type RepositoryCardProps = {
   };
 };
 
-export function RepositoryCard({ repo }: RepositoryCardProps) {
+export function RepositoryCard({ repo }: Readonly<RepositoryCardProps>) {
   return (
     <div className="p-4 border border-gray-200 rounded hover:border-gray-300 transition-colors">
       <div className="flex items-baseline justify-between">

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ISSUES_QUERY } from "@/graphql/issues";
 import { REPOSITORY_QUERY } from "@/graphql/repository";
 import { SEARCH_ISSUES_QUERY } from "@/graphql/searchIssues";
+import { VIEWER_QUERY } from "@/graphql/viewer";
 import { useQuery } from "@apollo/client/react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -71,6 +72,7 @@ export const Route = createFileRoute("/repos_/$owner/$name")({
 function RepositoryDetailPage() {
   const { owner, name } = Route.useParams();
   const { q, state } = Route.useSearch();
+  const { data: viewerData } = useQuery(VIEWER_QUERY);
   const navigate = useNavigate({ from: Route.fullPath });
 
   const handleSearchCommit = (value: string) => {
@@ -244,7 +246,13 @@ function RepositoryDetailPage() {
               {issues.length} of {totalIssues}
             </span>
           </div>
-          <NewIssueDialog owner={owner} name={name} repositoryId={repo.id} />
+          <NewIssueDialog
+            owner={owner}
+            name={name}
+            repositoryId={repo.id}
+            viewerLogin={viewerData?.viewer.login ?? ""}
+            viewerAvatarUrl={viewerData?.viewer.avatarUrl ?? ""}
+          />
         </div>
 
         <div className="flex gap-1 mb-3 border-b border-gray-200">

@@ -11,8 +11,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import type { CreateIssueMutation } from "@/gql/graphql";
 import { CREATE_ISSUE_MUTATION } from "@/graphql/createIssue";
-import { ISSUES_QUERY } from "@/graphql/issues";
+import { ISSUE_CARD_FRAGMENT } from "@/graphql/fragments";
+import type { Reference, StoreObject } from "@apollo/client";
+import { isReference } from "@apollo/client";
 import { useMutation } from "@apollo/client/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
@@ -33,28 +36,21 @@ type NewIssueDialogProps = {
   owner: string;
   name: string;
   repositoryId: string;
+  viewerLogin: string;
+  viewerAvatarUrl: string;
 };
 
 export function NewIssueDialog({
   owner,
   name,
   repositoryId,
-}: NewIssueDialogProps) {
+  viewerLogin,
+  viewerAvatarUrl,
+}: Readonly<NewIssueDialogProps>) {
   const [open, setOpen] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const [createIssue, { loading: mutationLoading }] = useMutation(
-    CREATE_ISSUE_MUTATION,
-    {
-      refetchQueries: [
-        {
-          query: ISSUES_QUERY,
-          variables: { owner, name, states: ["OPEN"] },
-        },
-      ],
-      awaitRefetchQueries: true,
-    },
-  );
+  const [createIssue] = useMutation(CREATE_ISSUE_MUTATION);
 
   const {
     register,
@@ -68,6 +64,13 @@ export function NewIssueDialog({
 
   const onSubmit = async (values: NewIssueFormValues) => {
     setSubmitError(null);
+
+    reset();
+    setOpen(false);
+
+    const now = new Date().toISOString();
+    const optimisticId = `optimistic-${crypto.randomUUID()}`;
+
     try {
       await createIssue({
         variables: {
@@ -77,18 +80,87 @@ export function NewIssueDialog({
             body: values.body || undefined,
           },
         },
+        optimisticResponse: {
+          createIssue: {
+            __typename: "CreateIssuePayload",
+            issue: {
+              __typename: "Issue",
+              id: optimisticId,
+              number: 0,
+              title: values.title,
+              state: "OPEN",
+              createdAt: now,
+              updatedAt: now,
+              author: {
+                __typename: "User",
+                login: viewerLogin,
+                avatarUrl: viewerAvatarUrl,
+              },
+              labels: {
+                __typename: "LabelConnection",
+                nodes: [],
+              },
+              comments: {
+                __typename: "IssueCommentConnection",
+                totalCount: 0,
+              },
+            },
+          },
+        } as unknown as CreateIssueMutation,
+        update(cache, { data }) {
+          const newIssue = data?.createIssue?.issue;
+          if (!newIssue) return;
+
+          const repositoryCacheId = cache.identify({
+            __typename: "Repository",
+            id: repositoryId,
+          });
+          if (!repositoryCacheId) return;
+
+          const newIssueRef = cache.writeFragment({
+            data: newIssue,
+            fragment: ISSUE_CARD_FRAGMENT,
+          });
+          if (!newIssueRef) return;
+
+          cache.modify({
+            id: repositoryCacheId,
+            fields: {
+              issues(existing, { readField }) {
+                if (isReference(existing)) return existing;
+
+                const existingIssues =
+                  (existing as {
+                    totalCount?: number;
+                    nodes?: Array<Reference | StoreObject>;
+                  }) ?? {};
+
+                const existingNodes = existingIssues.nodes ?? [];
+
+                const hasMatchingId = (nodeRef: Reference | StoreObject) =>
+                  readField<string>("id", nodeRef) === newIssue.id;
+
+                if (existingNodes.some(hasMatchingId)) return existingIssues;
+
+                return {
+                  ...existingIssues,
+                  totalCount: (existingIssues.totalCount ?? 0) + 1,
+                  nodes: [newIssueRef, ...existingNodes],
+                };
+              },
+            },
+          });
+        },
       });
-      reset();
-      setOpen(false);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to create issue";
       setSubmitError(message);
+      setOpen(true);
     }
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
-    if (mutationLoading) return;
     setOpen(nextOpen);
     if (!nextOpen) {
       reset();
@@ -117,7 +189,6 @@ export function NewIssueDialog({
                 id="title"
                 placeholder="Brief summary of the issue"
                 autoFocus
-                disabled={mutationLoading}
                 {...register("title")}
               />
               {errors.title && (
@@ -131,7 +202,6 @@ export function NewIssueDialog({
                 id="body"
                 placeholder="More details about the issue..."
                 rows={5}
-                disabled={mutationLoading}
                 {...register("body")}
               />
               {errors.body && (
@@ -151,12 +221,11 @@ export function NewIssueDialog({
               type="button"
               variant="outline"
               onClick={() => handleOpenChange(false)}
-              disabled={mutationLoading}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={!isValid || mutationLoading}>
-              {mutationLoading ? "Creating..." : "Create issue"}
+            <Button type="submit" disabled={!isValid}>
+              Create issue
             </Button>
           </DialogFooter>
         </form>
