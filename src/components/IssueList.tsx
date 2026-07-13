@@ -1,3 +1,7 @@
+import { Button } from "@/components/ui/button";
+import { CLOSE_ISSUE_MUTATION } from "@/graphql/closeIssue";
+import { useMutation } from "@apollo/client/react";
+
 type Label = {
   id: string;
   name: string;
@@ -34,55 +38,90 @@ export function IssueList({ issues }: Readonly<IssueListProps>) {
 
   return (
     <ul className="divide-y divide-gray-200 border border-gray-200 rounded overflow-hidden">
-      {issues.map((issue) => {
-        const labelNodes = issue.labels?.nodes ?? [];
-        return (
-          <li key={issue.id} className="p-4 bg-white hover:bg-gray-50">
-            <div className="flex items-start gap-3">
-              <StateIcon state={issue.state} />
-              <div className="flex-1 min-w-0">
-                <div className="font-medium text-gray-900">
-                  {issue.title}
-                  <span className="text-gray-500 font-normal ml-2">
-                    #{issue.number}
-                  </span>
-                </div>
-                <div className="mt-1 text-sm text-gray-600">
-                  {issue.state === "OPEN" ? "opened" : "closed"}{" "}
-                  {new Date(issue.updatedAt).toLocaleDateString()}
-                  {issue.author && <> by {issue.author.login}</>}
-                </div>
-                {labelNodes.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {labelNodes.map((label) => {
-                      if (!label) return null;
-                      return (
-                        <span
-                          key={label.id}
-                          className="inline-block px-2 py-0.5 text-xs rounded-full"
-                          style={{
-                            backgroundColor: `#${label.color}20`,
-                            color: `#${label.color}`,
-                            border: `1px solid #${label.color}40`,
-                          }}
-                        >
-                          {label.name}
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-              {issue.comments.totalCount > 0 && (
-                <div className="text-sm text-gray-500 whitespace-nowrap">
-                  💬 {issue.comments.totalCount}
-                </div>
-              )}
-            </div>
-          </li>
-        );
-      })}
+      {issues.map((issue) => (
+        <IssueListItem key={issue.id} issue={issue} />
+      ))}
     </ul>
+  );
+}
+
+function IssueListItem({ issue }: Readonly<{ issue: Issue }>) {
+  const [closeIssue, { loading: closing }] = useMutation(CLOSE_ISSUE_MUTATION);
+  const labelNodes = issue.labels?.nodes ?? [];
+
+  const handleClose = () => {
+    closeIssue({
+      variables: { input: { issueId: issue.id } },
+      optimisticResponse: {
+        closeIssue: {
+          __typename: "CloseIssuePayload",
+          issue: {
+            ...issue,
+            __typename: "Issue",
+            state: "CLOSED",
+            updatedAt: new Date().toISOString(),
+          },
+        },
+      } as unknown as import("@/gql/graphql").CloseIssueMutation,
+    });
+  };
+
+  return (
+    <li className="p-4 bg-white hover:bg-gray-50">
+      <div className="flex items-start gap-3">
+        <StateIcon state={issue.state} />
+        <div className="flex-1 min-w-0">
+          <div className="font-medium text-gray-900">
+            {issue.title}
+            <span className="text-gray-500 font-normal ml-2">
+              #{issue.number}
+            </span>
+          </div>
+          <div className="mt-1 text-sm text-gray-600">
+            {issue.state === "OPEN" ? "opened" : "closed"}{" "}
+            {new Date(issue.updatedAt).toLocaleDateString()}
+            {issue.author && <> by {issue.author.login}</>}
+          </div>
+          {labelNodes.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {labelNodes.map((label) => {
+                if (!label) return null;
+                return (
+                  <span
+                    key={label.id}
+                    className="inline-block px-2 py-0.5 text-xs rounded-full"
+                    style={{
+                      backgroundColor: `#${label.color}20`,
+                      color: `#${label.color}`,
+                      border: `1px solid #${label.color}40`,
+                    }}
+                  >
+                    {label.name}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          {issue.comments.totalCount > 0 && (
+            <div className="text-sm text-gray-500 whitespace-nowrap">
+              💬 {issue.comments.totalCount}
+            </div>
+          )}
+          {issue.state === "OPEN" && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleClose}
+              disabled={closing}
+            >
+              {closing ? "Closing..." : "Close"}
+            </Button>
+          )}
+        </div>
+      </div>
+    </li>
   );
 }
 
