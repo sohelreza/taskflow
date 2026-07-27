@@ -7,14 +7,12 @@ import process from "node:process";
 process.loadEnvFile(".env");
 
 const PORT = Number(process.env.PORT ?? 4000);
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const GITHUB_OAUTH_CLIENT_ID = process.env.GITHUB_OAUTH_CLIENT_ID;
 const GITHUB_OAUTH_CLIENT_SECRET = process.env.GITHUB_OAUTH_CLIENT_SECRET;
 const COOKIE_SECRET = process.env.COOKIE_SECRET;
 const FRONTEND_URL = process.env.FRONTEND_URL ?? "http://localhost:5173";
 
 const requiredEnv = {
-  GITHUB_TOKEN,
   GITHUB_OAUTH_CLIENT_ID,
   GITHUB_OAUTH_CLIENT_SECRET,
   COOKIE_SECRET,
@@ -211,11 +209,30 @@ app.get<{ Querystring: { code?: string; state?: string; error?: string } }>(
 );
 
 app.post("/api/graphql", async (request, reply) => {
+  // Look up the session from the cookie
+  const sessionCookie = request.unsignCookie(request.cookies.session_id ?? "");
+
+  if (!sessionCookie.valid || !sessionCookie.value) {
+    return reply.status(401).send({
+      errors: [{ message: "Not authenticated" }],
+    });
+  }
+
+  const session = sessions.get(sessionCookie.value);
+  if (!session) {
+    // Session cookie exists but the session was deleted server-side
+    // Clear the stale cookie so the client doesn't keep sending it
+    reply.clearCookie("session_id", { path: "/" });
+    return reply.status(401).send({
+      errors: [{ message: "Session expired" }],
+    });
+  }
+
   const response = await fetch("https://api.github.com/graphql", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${GITHUB_TOKEN}`,
+      Authorization: `Bearer ${session.githubToken}`,
       "User-Agent": "TaskFlow-BFF/0.1",
     },
     body: JSON.stringify(request.body),
@@ -223,6 +240,33 @@ app.post("/api/graphql", async (request, reply) => {
 
   const data = await response.json();
   return reply.status(response.status).send(data);
+});
+
+app.get("/auth/me", async (request, reply) => {
+  const sessionCookie = request.unsignCookie(request.cookies.session_id ?? "");
+
+  if (!sessionCookie.valid || !sessionCookie.value) {
+    return reply.status(401).send({ authenticated: false });
+  }
+
+  const session = sessions.get(sessionCookie.value);
+  if (!session) {
+    reply.clearCookie("session_id", { path: "/" });
+    return reply.status(401).send({ authenticated: false });
+  }
+
+  return { authenticated: true, login: session.githubLogin };
+});
+
+app.post("/auth/logout", async (request, reply) => {
+  const sessionCookie = request.unsignCookie(request.cookies.session_id ?? "");
+
+  if (sessionCookie.valid && sessionCookie.value) {
+    sessions.delete(sessionCookie.value);
+  }
+
+  reply.clearCookie("session_id", { path: "/" });
+  return { success: true };
 });
 
 try {
