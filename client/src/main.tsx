@@ -4,6 +4,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import { apolloClient } from "./lib/apollo";
+import { AuthProvider } from "./lib/AuthContext";
 import { routeTree } from "./routeTree.gen";
 
 const router = createRouter({ routeTree });
@@ -15,8 +16,10 @@ declare module "@tanstack/react-router" {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <ApolloProvider client={apolloClient}>
-      <RouterProvider router={router} />
-    </ApolloProvider>
+    <AuthProvider>
+      <ApolloProvider client={apolloClient}>
+        <RouterProvider router={router} />
+      </ApolloProvider>
+    </AuthProvider>
   </StrictMode>,
 );
