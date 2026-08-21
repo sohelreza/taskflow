@@ -1,5 +1,8 @@
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
+import helmet from "@fastify/helmet";
+import rateLimit from "@fastify/rate-limit";
+import type { FastifyError } from "fastify";
 import Fastify from "fastify";
 import crypto from "node:crypto";
 import process from "node:process";
@@ -49,6 +52,63 @@ await app.register(cors, {
 
 await app.register(cookie, {
   secret: COOKIE_SECRET,
+});
+
+await app.register(helmet, {
+  contentSecurityPolicy: false, // we'll configure this manually below
+});
+
+await app.register(rateLimit, {
+  max: 100,
+  timeWindow: "1 minute",
+});
+
+app.addHook("onSend", async (_request, reply) => {
+  reply.header(
+    "Content-Security-Policy",
+    [
+      "default-src 'self'",
+      "script-src 'self'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: https://avatars.githubusercontent.com https://*.githubusercontent.com",
+      "connect-src 'self' https://api.github.com",
+      "font-src 'self' data:",
+      "frame-ancestors 'none'",
+      "form-action 'self'",
+      "base-uri 'self'",
+    ].join("; "),
+  );
+});
+
+// Request ID generation
+app.addHook("onRequest", async (request) => {
+  const requestId = request.headers["x-request-id"] ?? crypto.randomUUID();
+  request.log = request.log.child({ requestId });
+});
+
+// Request ID response header
+app.addHook("onSend", async (request, reply) => {
+  const logger = request.log as unknown as {
+    bindings?: () => { requestId?: string };
+  };
+  const requestId = logger.bindings?.().requestId;
+  if (requestId) {
+    reply.header("X-Request-Id", requestId);
+  }
+});
+
+app.setErrorHandler(async (error: FastifyError, request, reply) => {
+  request.log.error({ err: error }, "request failed");
+
+  if (error.statusCode && error.statusCode < 500) {
+    return reply.status(error.statusCode).send({
+      errors: [{ message: error.message }],
+    });
+  }
+
+  return reply.status(500).send({
+    errors: [{ message: "Internal server error" }],
+  });
 });
 
 app.get("/health", async () => ({ status: "ok" }));
