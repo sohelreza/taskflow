@@ -11,12 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { CreateIssueMutation } from "@/gql/graphql";
-import { CREATE_ISSUE_MUTATION } from "@/graphql/createIssue";
-import { ISSUE_CARD_FRAGMENT } from "@/graphql/fragments";
-import type { Reference, StoreObject } from "@apollo/client";
-import { isReference } from "@apollo/client";
-import { useMutation } from "@apollo/client/react";
+import { useCreateIssue } from "@/hooks/useCreateIssue";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -46,11 +41,10 @@ export function NewIssueDialog({
   repositoryId,
   viewerLogin,
   viewerAvatarUrl,
-}: Readonly<NewIssueDialogProps>) {
+}: NewIssueDialogProps) {
   const [open, setOpen] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-
-  const [createIssue] = useMutation(CREATE_ISSUE_MUTATION);
+  const { createIssue } = useCreateIssue();
 
   const {
     register,
@@ -64,93 +58,16 @@ export function NewIssueDialog({
 
   const onSubmit = async (values: NewIssueFormValues) => {
     setSubmitError(null);
-
     reset();
     setOpen(false);
 
-    const now = new Date().toISOString();
-    const optimisticId = `optimistic-${crypto.randomUUID()}`;
-
     try {
       await createIssue({
-        variables: {
-          input: {
-            repositoryId,
-            title: values.title,
-            body: values.body || undefined,
-          },
-        },
-        optimisticResponse: {
-          createIssue: {
-            __typename: "CreateIssuePayload",
-            issue: {
-              __typename: "Issue",
-              id: optimisticId,
-              number: 0,
-              title: values.title,
-              state: "OPEN",
-              createdAt: now,
-              updatedAt: now,
-              author: {
-                __typename: "User",
-                login: viewerLogin,
-                avatarUrl: viewerAvatarUrl,
-              },
-              labels: {
-                __typename: "LabelConnection",
-                nodes: [],
-              },
-              comments: {
-                __typename: "IssueCommentConnection",
-                totalCount: 0,
-              },
-            },
-          },
-        } as unknown as CreateIssueMutation,
-        update(cache, { data }) {
-          const newIssue = data?.createIssue?.issue;
-          if (!newIssue) return;
-
-          const repositoryCacheId = cache.identify({
-            __typename: "Repository",
-            id: repositoryId,
-          });
-          if (!repositoryCacheId) return;
-
-          const newIssueRef = cache.writeFragment({
-            data: newIssue,
-            fragment: ISSUE_CARD_FRAGMENT,
-          });
-          if (!newIssueRef) return;
-
-          cache.modify({
-            id: repositoryCacheId,
-            fields: {
-              issues(existing, { readField }) {
-                if (isReference(existing)) return existing;
-
-                const existingIssues =
-                  (existing as {
-                    totalCount?: number;
-                    nodes?: Array<Reference | StoreObject>;
-                  }) ?? {};
-
-                const existingNodes = existingIssues.nodes ?? [];
-
-                const hasMatchingId = (nodeRef: Reference | StoreObject) =>
-                  readField<string>("id", nodeRef) === newIssue.id;
-
-                if (existingNodes.some(hasMatchingId)) return existingIssues;
-
-                return {
-                  ...existingIssues,
-                  totalCount: (existingIssues.totalCount ?? 0) + 1,
-                  nodes: [newIssueRef, ...existingNodes],
-                };
-              },
-            },
-          });
-        },
+        repositoryId,
+        title: values.title,
+        body: values.body,
+        viewerLogin,
+        viewerAvatarUrl,
       });
     } catch (err) {
       const message =

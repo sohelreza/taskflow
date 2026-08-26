@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { CLOSE_ISSUE_MUTATION } from "@/graphql/closeIssue";
-import { useMutation } from "@apollo/client/react";
+import { useCloseIssue } from "@/hooks/useCloseIssue";
 
 type Label = {
   id: string;
@@ -31,7 +30,7 @@ type IssueListProps = {
   issues: Issue[];
 };
 
-export function IssueList({ issues }: Readonly<IssueListProps>) {
+export function IssueList({ issues }: IssueListProps) {
   if (issues.length === 0) {
     return <p className="text-gray-600">No issues found.</p>;
   }
@@ -45,26 +44,9 @@ export function IssueList({ issues }: Readonly<IssueListProps>) {
   );
 }
 
-function IssueListItem({ issue }: Readonly<{ issue: Issue }>) {
-  const [closeIssue, { loading: closing }] = useMutation(CLOSE_ISSUE_MUTATION);
+function IssueListItem({ issue }: { issue: Issue }) {
+  const { closeIssue, loading: closing } = useCloseIssue();
   const labelNodes = issue.labels?.nodes ?? [];
-
-  const handleClose = () => {
-    closeIssue({
-      variables: { input: { issueId: issue.id } },
-      optimisticResponse: {
-        closeIssue: {
-          __typename: "CloseIssuePayload",
-          issue: {
-            ...issue,
-            __typename: "Issue",
-            state: "CLOSED",
-            updatedAt: new Date().toISOString(),
-          },
-        },
-      } as unknown as import("@/gql/graphql").CloseIssueMutation,
-    });
-  };
 
   return (
     <li className="p-4 bg-white hover:bg-gray-50">
@@ -113,7 +95,7 @@ function IssueListItem({ issue }: Readonly<{ issue: Issue }>) {
             <Button
               variant="outline"
               size="sm"
-              onClick={handleClose}
+              onClick={() => closeIssue(issue)}
               disabled={closing}
             >
               {closing ? "Closing..." : "Close"}
@@ -125,7 +107,7 @@ function IssueListItem({ issue }: Readonly<{ issue: Issue }>) {
   );
 }
 
-function StateIcon({ state }: Readonly<{ state: "OPEN" | "CLOSED" }>) {
+function StateIcon({ state }: { state: "OPEN" | "CLOSED" }) {
   const color = state === "OPEN" ? "text-green-600" : "text-purple-600";
   return (
     <span className={`inline-block mt-1 ${color}`} title={state.toLowerCase()}>
