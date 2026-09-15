@@ -41,7 +41,7 @@ export function NewIssueDialog({
   repositoryId,
   viewerLogin,
   viewerAvatarUrl,
-}: NewIssueDialogProps) {
+}: Readonly<NewIssueDialogProps>) {
   const [open, setOpen] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const { createIssue } = useCreateIssue();

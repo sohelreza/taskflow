@@ -283,7 +283,28 @@ function RepositoryDetailPage() {
           <p className="text-gray-600">Loading issues...</p>
         )}
 
-        {!listLoading && <IssueList issues={issues} />}
+        {!listLoading && (
+          <IssueList.Root>
+            {issues.length === 0 ? (
+              <IssueList.Empty>No issues found.</IssueList.Empty>
+            ) : (
+              issues.map((issue) => (
+                <IssueList.Item key={issue.id} issue={issue}>
+                  <IssueList.StateIcon />
+                  <IssueList.Content>
+                    <IssueList.Title />
+                    <IssueList.Meta />
+                    <IssueList.Labels />
+                  </IssueList.Content>
+                  <IssueList.Actions>
+                    <IssueList.CommentCount />
+                    <IssueList.CloseButton />
+                  </IssueList.Actions>
+                </IssueList.Item>
+              ))
+            )}
+          </IssueList.Root>
+        )}
 
         {hasMore && (
           <div className="mt-4 flex justify-center">
