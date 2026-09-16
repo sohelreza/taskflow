@@ -1,10 +1,12 @@
 import { createContext } from "react";
 import type { AuthState } from "./auth";
 
-export type AuthContextValue = {
-  auth: AuthState;
+export type AuthActionsContextValue = {
   refresh: () => Promise<void>;
   logout: () => Promise<void>;
 };
 
-export const AuthContext = createContext<AuthContextValue | null>(null);
+export const AuthStateContext = createContext<AuthState | null>(null);
+export const AuthActionsContext = createContext<AuthActionsContextValue | null>(
+  null,
+);

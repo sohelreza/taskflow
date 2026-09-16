@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/lib/useAuth";
+import { useAuthActions, useAuthState } from "@/lib/useAuth";
 import { Link } from "@tanstack/react-router";
 
 export function Nav() {
-  const { auth, logout } = useAuth();
+  const auth = useAuthState();
+  const { logout } = useAuthActions();
 
   return (
     <nav className="border-b border-gray-200 px-8 py-3">

@@ -6,7 +6,11 @@ import {
   type ReactNode,
 } from "react";
 import { logout as apiLogout, fetchAuthState, type AuthState } from "./auth";
-import { AuthContext, type AuthContextValue } from "./authContextInternal";
+import {
+  AuthActionsContext,
+  AuthStateContext,
+  type AuthActionsContextValue,
+} from "./authContextInternal";
 
 export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [auth, setAuth] = useState<AuthState>({ status: "loading" });
@@ -26,10 +30,16 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     void refresh();
   }, [refresh]);
 
-  const value = useMemo<AuthContextValue>(
-    () => ({ auth, refresh, logout: handleLogout }),
-    [auth, refresh, handleLogout],
+  const actionsValue = useMemo<AuthActionsContextValue>(
+    () => ({ refresh, logout: handleLogout }),
+    [refresh, handleLogout],
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthStateContext.Provider value={auth}>
+      <AuthActionsContext.Provider value={actionsValue}>
+        {children}
+      </AuthActionsContext.Provider>
+    </AuthStateContext.Provider>
+  );
 }

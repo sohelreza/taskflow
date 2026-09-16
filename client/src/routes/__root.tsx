@@ -1,6 +1,6 @@
 import { Nav } from "@/components/Nav";
 import { SignInPrompt } from "@/components/SignInPrompt";
-import { useAuth } from "@/lib/useAuth";
+import { useAuthState } from "@/lib/useAuth";
 import { createRootRoute, Outlet, useSearch } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 
@@ -28,7 +28,7 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
 };
 
 function RootComponent() {
-  const { auth } = useAuth();
+  const auth = useAuthState();
   const { auth_error } = useSearch({ strict: false }) as {
     auth_error?: string;
   };
