@@ -1,8 +1,10 @@
 import { Nav } from "@/components/Nav";
 import { SignInPrompt } from "@/components/SignInPrompt";
+import { Button } from "@/components/ui/button";
 import { useAuthState } from "@/lib/useAuth";
 import { createRootRoute, Outlet, useSearch } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
 
 type RootSearch = {
   auth_error?: string;
@@ -26,6 +28,22 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   token_exchange_failed: "Couldn't complete sign-in with GitHub.",
   viewer_lookup_failed: "Couldn't verify your GitHub identity.",
 };
+
+function GlobalErrorFallback({
+  error,
+  resetErrorBoundary,
+}: Readonly<FallbackProps>) {
+  const message = error instanceof Error ? error.message : String(error);
+  return (
+    <div className="min-h-screen flex items-center justify-center p-8">
+      <div className="max-w-md w-full text-center space-y-4">
+        <h1 className="text-2xl font-semibold">Something went wrong</h1>
+        <p className="text-gray-600 text-sm">{message}</p>
+        <Button onClick={resetErrorBoundary}>Reload the app</Button>
+      </div>
+    </div>
+  );
+}
 
 function RootComponent() {
   const auth = useAuthState();
@@ -54,10 +72,13 @@ function RootComponent() {
   }
 
   return (
-    <div>
+    <ErrorBoundary
+      FallbackComponent={GlobalErrorFallback}
+      onReset={() => window.location.reload()}
+    >
       <Nav />
       <Outlet />
       <TanStackRouterDevtools />
-    </div>
+    </ErrorBoundary>
   );
 }

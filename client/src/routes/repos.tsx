@@ -1,78 +1,101 @@
 import { RepositoryCard } from "@/components/RepositoryCard";
 import { Button } from "@/components/ui/button";
 import { REPOSITORIES_QUERY } from "@/graphql/repositories";
-import { useQuery } from "@apollo/client/react";
+import { useSuspenseQuery } from "@apollo/client/react";
 import { createFileRoute } from "@tanstack/react-router";
+import { Suspense, type ComponentType } from "react";
+import {
+  ErrorBoundary as ErrorBoundaryBase,
+  type ErrorBoundaryProps,
+  type FallbackProps,
+} from "react-error-boundary";
+
+const ErrorBoundary =
+  ErrorBoundaryBase as unknown as ComponentType<ErrorBoundaryProps>;
 
 export const Route = createFileRoute("/repos")({
   component: ReposPage,
 });
 
 function ReposPage() {
-  const { data, loading, error, fetchMore } = useQuery(REPOSITORIES_QUERY);
+  return (
+    <div className="max-w-5xl mx-auto p-8">
+      <h1 className="text-2xl font-semibold mb-6">Your Repositories</h1>
+      <ErrorBoundary
+        FallbackComponent={ReposErrorFallback}
+        onReset={() => window.location.reload()}
+      >
+        <Suspense fallback={<ReposSkeleton />}>
+          <ReposList />
+        </Suspense>
+      </ErrorBoundary>
+    </div>
+  );
+}
 
-  if (loading && !data) {
-    return (
-      <div className="p-8">
-        <h2 className="text-2xl font-semibold">Your Repositories</h2>
-        <p className="mt-4 text-gray-600">Loading...</p>
-      </div>
-    );
+function ReposList() {
+  const { data, dataState, fetchMore } = useSuspenseQuery(REPOSITORIES_QUERY);
+
+  if (dataState !== "complete") {
+    return null;
   }
 
-  if (error) {
-    return (
-      <div className="p-8">
-        <h2 className="text-2xl font-semibold">Your Repositories</h2>
-        <p className="mt-4 text-red-600">Error: {error.message}</p>
-      </div>
-    );
-  }
-
-  const repositories = data?.viewer.repositories.nodes ?? [];
-  const totalCount = data?.viewer.repositories.totalCount ?? 0;
-  const pageInfo = data?.viewer.repositories.pageInfo;
-  const hasNextPage = pageInfo?.hasNextPage ?? false;
-  const endCursor = pageInfo?.endCursor;
-
-  const handleLoadMore = () => {
-    if (!endCursor) return;
-    fetchMore({
-      variables: { after: endCursor },
-    });
-  };
+  const repos = data.viewer.repositories.nodes ?? [];
+  const pageInfo = data.viewer.repositories.pageInfo;
 
   return (
-    <div className="p-8">
-      <div className="flex items-baseline justify-between mb-6">
-        <h2 className="text-2xl font-semibold">Your Repositories</h2>
-        <span className="text-sm text-gray-600">
-          Showing {repositories.length} of {totalCount}
-        </span>
+    <>
+      <div className="space-y-3">
+        {repos.map(
+          (repo) => repo && <RepositoryCard key={repo.id} repo={repo} />,
+        )}
       </div>
-
-      {repositories.length === 0 && (
-        <p className="text-gray-600">No repositories found.</p>
-      )}
-
-      <ul className="space-y-3">
-        {repositories.map((repo) => {
-          if (!repo) return null;
-          return (
-            <li key={repo.id}>
-              <RepositoryCard repo={repo} />
-            </li>
-          );
-        })}
-      </ul>
-
-      {hasNextPage && (
+      {pageInfo.hasNextPage && (
         <div className="mt-6 flex justify-center">
-          <Button onClick={handleLoadMore} variant="outline" disabled={loading}>
-            {loading ? "Loading..." : "Load more"}
+          <Button
+            variant="outline"
+            onClick={() =>
+              fetchMore({
+                variables: { after: pageInfo.endCursor },
+              })
+            }
+          >
+            Load more
           </Button>
         </div>
       )}
+    </>
+  );
+}
+
+function ReposSkeleton() {
+  return (
+    <div className="space-y-3">
+      {[1, 2, 3].map((n) => (
+        <div
+          key={n}
+          className="p-4 border border-gray-200 rounded animate-pulse"
+        >
+          <div className="h-5 bg-gray-200 rounded w-1/3 mb-2" />
+          <div className="h-4 bg-gray-100 rounded w-2/3" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ReposErrorFallback({
+  error,
+  resetErrorBoundary,
+}: Readonly<FallbackProps>) {
+  const message = error instanceof Error ? error.message : String(error);
+  return (
+    <div className="p-4 border border-red-200 bg-red-50 rounded text-red-700">
+      <p className="font-medium mb-2">Failed to load repositories</p>
+      <p className="text-sm mb-3">{message}</p>
+      <Button variant="outline" size="sm" onClick={resetErrorBoundary}>
+        Try again
+      </Button>
     </div>
   );
 }
