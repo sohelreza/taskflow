@@ -26,3 +26,9 @@ dist-ssr
 
 .env.local
 .env
+
+
+# Cypress
+cypress/screenshots/
+cypress/videos/
+cypress/downloads/
