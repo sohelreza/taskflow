@@ -4,6 +4,7 @@ Cypress.on("uncaught:exception", (err) => {
 });
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace -- required by Cypress typing conventions
   namespace Cypress {
     interface Chainable {
       /**
@@ -22,7 +23,7 @@ Cypress.Commands.add("loginAsTestUser", (login = "cypress-user") => {
     body: { login },
   }).then((response) => {
     expect(response.status).to.eq(200);
-    expect(response.body.authenticated).to.be.true;
+    expect(response.body.authenticated).to.equal(true);
   });
 });
 
