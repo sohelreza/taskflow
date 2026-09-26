@@ -5,15 +5,25 @@ import rateLimit from "@fastify/rate-limit";
 import type { FastifyError } from "fastify";
 import Fastify from "fastify";
 import crypto from "node:crypto";
+import fs from "node:fs";
 import process from "node:process";
 
-process.loadEnvFile(".env");
+// Load .env.test if NODE_ENV=test, else .env
+const envFile = process.env.NODE_ENV === "test" ? ".env.test" : ".env";
+if (fs.existsSync(envFile)) {
+  process.loadEnvFile(envFile);
+  console.log(`Loaded ${envFile}`);
+} else {
+  console.error(`No ${envFile} found`);
+  process.exit(1);
+}
 
 const PORT = Number(process.env.PORT ?? 4000);
 const GITHUB_OAUTH_CLIENT_ID = process.env.GITHUB_OAUTH_CLIENT_ID;
 const GITHUB_OAUTH_CLIENT_SECRET = process.env.GITHUB_OAUTH_CLIENT_SECRET;
 const COOKIE_SECRET = process.env.COOKIE_SECRET;
 const FRONTEND_URL = process.env.FRONTEND_URL ?? "http://localhost:5173";
+const TEST_MODE = process.env.TEST_MODE === "true";
 
 const requiredEnv = {
   GITHUB_OAUTH_CLIENT_ID,
@@ -23,13 +33,12 @@ const requiredEnv = {
 
 for (const [key, value] of Object.entries(requiredEnv)) {
   if (!value) {
-    console.error(`${key} is not set in .env`);
+    console.error(`${key} is not set in ${envFile}`);
     process.exit(1);
   }
 }
 
-// In-memory session store — sessionId → { githubToken, userId }
-// Replace with Redis / database for production.
+// In-memory session store — sessionId → { githubToken, githubLogin, createdAt }
 type Session = {
   githubToken: string;
   githubLogin: string;
@@ -55,7 +64,7 @@ await app.register(cookie, {
 });
 
 await app.register(helmet, {
-  contentSecurityPolicy: false, // we'll configure this manually below
+  contentSecurityPolicy: false,
 });
 
 await app.register(rateLimit, {
@@ -63,6 +72,7 @@ await app.register(rateLimit, {
   timeWindow: "1 minute",
 });
 
+// CSP hook
 app.addHook("onSend", async (_request, reply) => {
   reply.header(
     "Content-Security-Policy",
@@ -82,7 +92,8 @@ app.addHook("onSend", async (_request, reply) => {
 
 // Request ID generation
 app.addHook("onRequest", async (request) => {
-  const requestId = request.headers["x-request-id"] ?? crypto.randomUUID();
+  const requestId =
+    (request.headers["x-request-id"] as string) ?? crypto.randomUUID();
   request.log = request.log.child({ requestId });
 });
 
@@ -97,6 +108,7 @@ app.addHook("onSend", async (request, reply) => {
   }
 });
 
+// Structured error handler
 app.setErrorHandler(async (error: FastifyError, request, reply) => {
   request.log.error({ err: error }, "request failed");
 
@@ -111,8 +123,10 @@ app.setErrorHandler(async (error: FastifyError, request, reply) => {
   });
 });
 
+// Health check
 app.get("/health", async () => ({ status: "ok" }));
 
+// OAuth login — start the flow
 app.get("/auth/login", async (_request, reply) => {
   const state = crypto.randomBytes(16).toString("hex");
 
@@ -154,12 +168,12 @@ app.get("/auth/login", async (_request, reply) => {
   return reply.redirect(authUrl.toString());
 });
 
+// OAuth callback — exchange code for token
 app.get<{ Querystring: { code?: string; state?: string; error?: string } }>(
   "/auth/callback",
   async (request, reply) => {
     const { code, state: returnedState, error } = request.query;
 
-    // If GitHub sent an error, redirect back with a message
     if (error) {
       return reply.redirect(
         `${FRONTEND_URL}/?auth_error=${encodeURIComponent(error)}`,
@@ -170,13 +184,11 @@ app.get<{ Querystring: { code?: string; state?: string; error?: string } }>(
       return reply.redirect(`${FRONTEND_URL}/?auth_error=missing_params`);
     }
 
-    // Verify the state matches what we saved (CSRF check)
     const savedState = request.unsignCookie(request.cookies.oauth_state ?? "");
     if (!savedState.valid || savedState.value !== returnedState) {
       return reply.redirect(`${FRONTEND_URL}/?auth_error=state_mismatch`);
     }
 
-    // Retrieve the PKCE code verifier
     const savedVerifier = request.unsignCookie(
       request.cookies.oauth_verifier ?? "",
     );
@@ -184,7 +196,6 @@ app.get<{ Querystring: { code?: string; state?: string; error?: string } }>(
       return reply.redirect(`${FRONTEND_URL}/?auth_error=missing_verifier`);
     }
 
-    // Exchange the code for an access token
     const tokenResponse = await fetch(
       "https://github.com/login/oauth/access_token",
       {
@@ -223,7 +234,6 @@ app.get<{ Querystring: { code?: string; state?: string; error?: string } }>(
       );
     }
 
-    // Fetch the user's basic info so we know who they are
     const viewerResponse = await fetch("https://api.github.com/graphql", {
       method: "POST",
       headers: {
@@ -242,7 +252,6 @@ app.get<{ Querystring: { code?: string; state?: string; error?: string } }>(
       return reply.redirect(`${FRONTEND_URL}/?auth_error=viewer_lookup_failed`);
     }
 
-    // Create a session
     const sessionId = crypto.randomBytes(32).toString("base64url");
     sessions.set(sessionId, {
       githubToken: tokenData.access_token,
@@ -250,26 +259,86 @@ app.get<{ Querystring: { code?: string; state?: string; error?: string } }>(
       createdAt: Date.now(),
     });
 
-    // Clear the temp OAuth cookies
     reply.clearCookie("oauth_state", { path: "/" });
     reply.clearCookie("oauth_verifier", { path: "/" });
 
-    // Set the real session cookie
     reply.setCookie("session_id", sessionId, {
       path: "/",
       httpOnly: true,
       secure: false,
       sameSite: "lax",
       signed: true,
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 60 * 24 * 7,
     });
 
     return reply.redirect(FRONTEND_URL);
   },
 );
 
+// Test-mode only: bypass OAuth for E2E tests
+if (TEST_MODE) {
+  app.post<{ Body: { login?: string; githubToken?: string } }>(
+    "/auth/test-login",
+    async (request, reply) => {
+      const login = request.body.login ?? "testuser";
+      const githubToken = request.body.githubToken ?? "test-token-not-real";
+
+      const sessionId = crypto.randomBytes(32).toString("base64url");
+      sessions.set(sessionId, {
+        githubToken,
+        githubLogin: login,
+        createdAt: Date.now(),
+      });
+
+      reply.setCookie("session_id", sessionId, {
+        path: "/",
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+        signed: true,
+        maxAge: 60 * 60 * 24 * 7,
+      });
+
+      return { authenticated: true, login };
+    },
+  );
+
+  app.log.warn(
+    "TEST_MODE is enabled — /auth/test-login is exposed. Do NOT run this in production.",
+  );
+}
+
+// Current session info
+app.get("/auth/me", async (request, reply) => {
+  const sessionCookie = request.unsignCookie(request.cookies.session_id ?? "");
+
+  if (!sessionCookie.valid || !sessionCookie.value) {
+    return reply.status(401).send({ authenticated: false });
+  }
+
+  const session = sessions.get(sessionCookie.value);
+  if (!session) {
+    reply.clearCookie("session_id", { path: "/" });
+    return reply.status(401).send({ authenticated: false });
+  }
+
+  return { authenticated: true, login: session.githubLogin };
+});
+
+// Logout
+app.post("/auth/logout", async (request, reply) => {
+  const sessionCookie = request.unsignCookie(request.cookies.session_id ?? "");
+
+  if (sessionCookie.valid && sessionCookie.value) {
+    sessions.delete(sessionCookie.value);
+  }
+
+  reply.clearCookie("session_id", { path: "/" });
+  return { success: true };
+});
+
+// GraphQL proxy
 app.post("/api/graphql", async (request, reply) => {
-  // Look up the session from the cookie
   const sessionCookie = request.unsignCookie(request.cookies.session_id ?? "");
 
   if (!sessionCookie.valid || !sessionCookie.value) {
@@ -280,8 +349,6 @@ app.post("/api/graphql", async (request, reply) => {
 
   const session = sessions.get(sessionCookie.value);
   if (!session) {
-    // Session cookie exists but the session was deleted server-side
-    // Clear the stale cookie so the client doesn't keep sending it
     reply.clearCookie("session_id", { path: "/" });
     return reply.status(401).send({
       errors: [{ message: "Session expired" }],
@@ -300,33 +367,6 @@ app.post("/api/graphql", async (request, reply) => {
 
   const data = await response.json();
   return reply.status(response.status).send(data);
-});
-
-app.get("/auth/me", async (request, reply) => {
-  const sessionCookie = request.unsignCookie(request.cookies.session_id ?? "");
-
-  if (!sessionCookie.valid || !sessionCookie.value) {
-    return reply.status(401).send({ authenticated: false });
-  }
-
-  const session = sessions.get(sessionCookie.value);
-  if (!session) {
-    reply.clearCookie("session_id", { path: "/" });
-    return reply.status(401).send({ authenticated: false });
-  }
-
-  return { authenticated: true, login: session.githubLogin };
-});
-
-app.post("/auth/logout", async (request, reply) => {
-  const sessionCookie = request.unsignCookie(request.cookies.session_id ?? "");
-
-  if (sessionCookie.valid && sessionCookie.value) {
-    sessions.delete(sessionCookie.value);
-  }
-
-  reply.clearCookie("session_id", { path: "/" });
-  return { success: true };
 });
 
 try {

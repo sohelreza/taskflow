@@ -23,6 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 
-
 .env.local
 .env
+
+# Test env
+server/.env.test
