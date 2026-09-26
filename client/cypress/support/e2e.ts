@@ -1,10 +1,29 @@
-// This file runs before every spec.
-// Custom Cypress commands go here (starting from Commit 46).
-
-// Prevent uncaught exceptions from failing tests unless we assert them.
-// React 19 can throw during render for transient reasons we don't care about in E2E.
 Cypress.on("uncaught:exception", (err) => {
-  // Log for debugging but don't fail the test
   console.warn("Uncaught app exception:", err.message);
   return false;
 });
+
+declare global {
+  namespace Cypress {
+    interface Chainable {
+      /**
+       * Logs in as a test user via the server's test-login endpoint.
+       * Requires the server to be running in TEST_MODE.
+       */
+      loginAsTestUser(login?: string): Chainable<void>;
+    }
+  }
+}
+
+Cypress.Commands.add("loginAsTestUser", (login = "cypress-user") => {
+  cy.request({
+    method: "POST",
+    url: "/auth/test-login",
+    body: { login },
+  }).then((response) => {
+    expect(response.status).to.eq(200);
+    expect(response.body.authenticated).to.be.true;
+  });
+});
+
+export {};
