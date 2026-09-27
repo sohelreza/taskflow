@@ -1,0 +1,55 @@
+{
+  "data": {
+    "viewer": {
+      "__typename": "User",
+      "id": "test-user-id",
+      "repositories": {
+        "__typename": "RepositoryConnection",
+        "totalCount": 2,
+        "pageInfo": {
+          "__typename": "PageInfo",
+          "hasNextPage": false,
+          "endCursor": null
+        },
+        "nodes": [
+          {
+            "__typename": "Repository",
+            "id": "repo-1",
+            "name": "awesome-project",
+            "nameWithOwner": "cypress-user/awesome-project",
+            "description": "An awesome project for testing",
+            "stargazerCount": 42,
+            "updatedAt": "2026-09-01T10:00:00Z",
+            "owner": {
+              "__typename": "User",
+              "login": "cypress-user"
+            },
+            "primaryLanguage": {
+              "__typename": "Language",
+              "name": "TypeScript",
+              "color": "#3178c6"
+            }
+          },
+          {
+            "__typename": "Repository",
+            "id": "repo-2",
+            "name": "test-app",
+            "nameWithOwner": "cypress-user/test-app",
+            "description": "A test application",
+            "stargazerCount": 15,
+            "updatedAt": "2026-08-15T08:30:00Z",
+            "owner": {
+              "__typename": "User",
+              "login": "cypress-user"
+            },
+            "primaryLanguage": {
+              "__typename": "Language",
+              "name": "JavaScript",
+              "color": "#f1e05a"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "data": {
+    "viewer": {
+      "__typename": "User",
+      "id": "test-user-id",
+      "login": "cypress-user",
+      "name": "Cypress Test User",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/1?v=4"
+    }
+  }
+}
