@@ -1,0 +1,18 @@
+{
+  "data": {
+    "repository": {
+      "__typename": "Repository",
+      "id": "repo-1",
+      "issues": {
+        "__typename": "IssueConnection",
+        "totalCount": 0,
+        "pageInfo": {
+          "__typename": "PageInfo",
+          "hasNextPage": false,
+          "endCursor": null
+        },
+        "nodes": []
+      }
+    }
+  }
+}

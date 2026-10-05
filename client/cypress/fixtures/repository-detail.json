@@ -1,0 +1,21 @@
+{
+  "data": {
+    "repository": {
+      "__typename": "Repository",
+      "id": "repo-1",
+      "name": "awesome-project",
+      "nameWithOwner": "cypress-user/awesome-project",
+      "description": "An awesome project for testing",
+      "stargazerCount": 42,
+      "owner": {
+        "__typename": "User",
+        "login": "cypress-user"
+      },
+      "primaryLanguage": {
+        "__typename": "Language",
+        "name": "TypeScript",
+        "color": "#3178c6"
+      }
+    }
+  }
+}

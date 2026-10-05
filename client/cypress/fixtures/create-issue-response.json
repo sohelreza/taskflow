@@ -1,0 +1,29 @@
+{
+  "data": {
+    "createIssue": {
+      "__typename": "CreateIssuePayload",
+      "issue": {
+        "__typename": "Issue",
+        "id": "real-issue-id-from-server",
+        "number": 1,
+        "title": "Fix the bug we discussed",
+        "state": "OPEN",
+        "createdAt": "2026-09-28T10:00:00Z",
+        "updatedAt": "2026-09-28T10:00:00Z",
+        "author": {
+          "__typename": "User",
+          "login": "cypress-user",
+          "avatarUrl": "https://avatars.githubusercontent.com/u/1?v=4"
+        },
+        "labels": {
+          "__typename": "LabelConnection",
+          "nodes": []
+        },
+        "comments": {
+          "__typename": "IssueCommentConnection",
+          "totalCount": 0
+        }
+      }
+    }
+  }
+}
