@@ -1,0 +1,41 @@
+{
+  "data": {
+    "repository": {
+      "__typename": "Repository",
+      "id": "repo-1",
+      "issues": {
+        "__typename": "IssueConnection",
+        "totalCount": 1,
+        "pageInfo": {
+          "__typename": "PageInfo",
+          "hasNextPage": false,
+          "endCursor": null
+        },
+        "nodes": [
+          {
+            "__typename": "Issue",
+            "id": "issue-to-close",
+            "number": 42,
+            "title": "Fix the critical bug",
+            "state": "OPEN",
+            "createdAt": "2026-10-01T10:00:00Z",
+            "updatedAt": "2026-10-01T10:00:00Z",
+            "author": {
+              "__typename": "User",
+              "login": "cypress-user",
+              "avatarUrl": "https://avatars.githubusercontent.com/u/1?v=4"
+            },
+            "labels": {
+              "__typename": "LabelConnection",
+              "nodes": []
+            },
+            "comments": {
+              "__typename": "IssueCommentConnection",
+              "totalCount": 0
+            }
+          }
+        ]
+      }
+    }
+  }
+}
