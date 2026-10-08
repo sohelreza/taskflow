@@ -1,27 +1,7 @@
 describe("Repository list and navigation", () => {
   beforeEach(() => {
     cy.loginAsTestUser();
-
-    cy.intercept("POST", "/api/graphql", (req) => {
-      const opName = req.body?.operationName;
-
-      if (opName === "GetViewer") {
-        req.reply({ fixture: "viewer.json" });
-        return;
-      }
-
-      if (opName === "GetRepositories") {
-        req.reply({ fixture: "repositories.json" });
-        return;
-      }
-
-      req.reply({
-        statusCode: 500,
-        body: {
-          errors: [{ message: `Unmocked operation: ${opName ?? "unknown"}` }],
-        },
-      });
-    }).as("graphql");
+    cy.mockGraphQL();
   });
 
   it("shows the repositories list", () => {
