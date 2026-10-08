@@ -20,7 +20,7 @@ type RepositoryCardProps = {
 
 export function RepositoryCard({ repo }: Readonly<RepositoryCardProps>) {
   return (
-    <div className="p-4 border border-gray-200 rounded hover:border-gray-300 transition-colors">
+    <article className="p-4 border border-gray-200 rounded hover:border-gray-300 transition-colors">
       <div className="flex items-baseline justify-between">
         <h3 className="font-medium">
           <Link
@@ -48,6 +48,6 @@ export function RepositoryCard({ repo }: Readonly<RepositoryCardProps>) {
         )}
         <span>Updated {new Date(repo.updatedAt).toLocaleDateString()}</span>
       </div>
-    </div>
+    </article>
   );
 }

@@ -7,7 +7,7 @@ export function Nav() {
   const { logout } = useAuthActions();
 
   return (
-    <nav className="border-b border-gray-200 px-8 py-3">
+    <nav aria-label="Primary" className="border-b border-gray-200 px-8 py-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-6">
           <Link

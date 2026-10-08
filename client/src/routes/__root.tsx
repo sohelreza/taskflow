@@ -77,7 +77,9 @@ function RootComponent() {
       onReset={() => window.location.reload()}
     >
       <Nav />
-      <Outlet />
+      <main id="main-content" tabIndex={-1}>
+        <Outlet />
+      </main>
       <TanStackRouterDevtools />
     </ErrorBoundary>
   );
