@@ -50,7 +50,9 @@ const sessions = new Map<string, Session>();
 const app = Fastify({
   logger: {
     level: "info",
-    transport: { target: "pino-pretty" },
+    ...(process.env.NODE_ENV !== "production" && {
+      transport: { target: "pino-pretty" },
+    }),
   },
 });
 
