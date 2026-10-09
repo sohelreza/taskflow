@@ -1,15 +1,13 @@
-# TaskFlow
+# TaskFlow — Client
 
-A GraphQL-powered task manager built on top of GitHub Issues.
+React 19 + Vite + TypeScript. The Vite dev server for the TaskFlow app.
 
-## Stack
+See the [root README](../README.md) for architecture, setup, and running instructions.
 
-- Vite + React + TypeScript
-- Tailwind CSS
+## Scripts
 
-## Setup
-
-```bash
-npm install
-npm run dev
-```
+- `npm run dev` — start the Vite dev server (needs the BFF running separately)
+- `npm run build` — production build
+- `npm run codegen` — regenerate GraphQL types from the schema
+- `npm run cypress:open` — open the Cypress UI
+- `npm run cypress:run` — run E2E tests headlessly
