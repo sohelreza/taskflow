@@ -24,6 +24,8 @@ const GITHUB_OAUTH_CLIENT_SECRET = process.env.GITHUB_OAUTH_CLIENT_SECRET;
 const COOKIE_SECRET = process.env.COOKIE_SECRET;
 const FRONTEND_URL = process.env.FRONTEND_URL ?? "http://localhost:5173";
 const TEST_MODE = process.env.TEST_MODE === "true";
+const COOKIE_SECURE = process.env.NODE_ENV === "production";
+const BASE_URL = process.env.BASE_URL ?? "http://localhost:4000";
 
 const requiredEnv = {
   GITHUB_OAUTH_CLIENT_ID,
@@ -139,7 +141,7 @@ app.get("/auth/login", async (_request, reply) => {
   reply.setCookie("oauth_state", state, {
     path: "/",
     httpOnly: true,
-    secure: false,
+    secure: COOKIE_SECURE,
     sameSite: "lax",
     signed: true,
     maxAge: 600,
@@ -148,7 +150,7 @@ app.get("/auth/login", async (_request, reply) => {
   reply.setCookie("oauth_verifier", codeVerifier, {
     path: "/",
     httpOnly: true,
-    secure: false,
+    secure: COOKIE_SECURE,
     sameSite: "lax",
     signed: true,
     maxAge: 600,
@@ -156,10 +158,7 @@ app.get("/auth/login", async (_request, reply) => {
 
   const authUrl = new URL("https://github.com/login/oauth/authorize");
   authUrl.searchParams.set("client_id", GITHUB_OAUTH_CLIENT_ID!);
-  authUrl.searchParams.set(
-    "redirect_uri",
-    "http://localhost:4000/auth/callback",
-  );
+  authUrl.searchParams.set("redirect_uri", `${BASE_URL}/auth/callback`);
   authUrl.searchParams.set("scope", "read:user repo");
   authUrl.searchParams.set("state", state);
   authUrl.searchParams.set("code_challenge", codeChallenge);
@@ -208,7 +207,7 @@ app.get<{ Querystring: { code?: string; state?: string; error?: string } }>(
           client_id: GITHUB_OAUTH_CLIENT_ID,
           client_secret: GITHUB_OAUTH_CLIENT_SECRET,
           code,
-          redirect_uri: "http://localhost:4000/auth/callback",
+          redirect_uri: `${BASE_URL}/auth/callback`,
           code_verifier: savedVerifier.value,
         }),
       },
@@ -265,7 +264,7 @@ app.get<{ Querystring: { code?: string; state?: string; error?: string } }>(
     reply.setCookie("session_id", sessionId, {
       path: "/",
       httpOnly: true,
-      secure: false,
+      secure: COOKIE_SECURE,
       sameSite: "lax",
       signed: true,
       maxAge: 60 * 60 * 24 * 7,
@@ -293,7 +292,7 @@ if (TEST_MODE) {
       reply.setCookie("session_id", sessionId, {
         path: "/",
         httpOnly: true,
-        secure: false,
+        secure: COOKIE_SECURE,
         sameSite: "lax",
         signed: true,
         maxAge: 60 * 60 * 24 * 7,
