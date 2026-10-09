@@ -369,7 +369,8 @@ app.post("/api/graphql", async (request, reply) => {
 });
 
 try {
-  await app.listen({ port: PORT, host: "127.0.0.1" });
+  const HOST = process.env.NODE_ENV === "production" ? "0.0.0.0" : "127.0.0.1";
+  await app.listen({ port: PORT, host: HOST });
   console.log(`Server listening on http://localhost:${PORT}`);
 } catch (err) {
   app.log.error(err);
