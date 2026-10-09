@@ -8,14 +8,12 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import process from "node:process";
 
-// Load .env.test if NODE_ENV=test, else .env
 const envFile = process.env.NODE_ENV === "test" ? ".env.test" : ".env";
 if (fs.existsSync(envFile)) {
   process.loadEnvFile(envFile);
   console.log(`Loaded ${envFile}`);
 } else {
-  console.error(`No ${envFile} found`);
-  process.exit(1);
+  console.log(`No ${envFile} found — using process.env directly`);
 }
 
 const PORT = Number(process.env.PORT ?? 4000);
