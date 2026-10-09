@@ -1,8 +1,7 @@
-/* eslint-disable react-refresh/only-export-components -- compound component pattern intentionally colocates subcomponents and namespace export */
-
+import { LiveAnnouncer } from "@/components/LiveAnnouncer";
 import { Button } from "@/components/ui/button";
 import { useCloseIssue } from "@/hooks/useCloseIssue";
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, useState, type ReactNode } from "react";
 
 type Label = {
   id: string;
@@ -160,18 +159,31 @@ function Actions({ children }: Readonly<{ children: ReactNode }>) {
 function CloseButton() {
   const issue = useIssue();
   const { closeIssue, loading } = useCloseIssue();
+  const [announcement, setAnnouncement] = useState("");
 
   if (issue.state !== "OPEN") return null;
 
+  const handleClose = async () => {
+    try {
+      await closeIssue(issue);
+      setAnnouncement(`Issue closed: ${issue.title}`);
+    } catch {
+      setAnnouncement(`Failed to close issue: ${issue.title}`);
+    }
+  };
+
   return (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={() => closeIssue(issue)}
-      disabled={loading}
-    >
-      {loading ? "Closing..." : "Close"}
-    </Button>
+    <>
+      <LiveAnnouncer message={announcement} />
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleClose}
+        disabled={loading}
+      >
+        {loading ? "Closing..." : "Close"}
+      </Button>
+    </>
   );
 }
 
