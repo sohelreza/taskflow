@@ -1,5 +1,6 @@
 import { Nav } from "@/components/Nav";
 import { SignInPrompt } from "@/components/SignInPrompt";
+import { SkipLink } from "@/components/SkipLink";
 import { Button } from "@/components/ui/button";
 import { useAuthState } from "@/lib/useAuth";
 import { createRootRoute, Outlet, useSearch } from "@tanstack/react-router";
@@ -76,6 +77,7 @@ function RootComponent() {
       FallbackComponent={GlobalErrorFallback}
       onReset={() => window.location.reload()}
     >
+      <SkipLink />
       <Nav />
       <main id="main-content" tabIndex={-1}>
         <Outlet />
