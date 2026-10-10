@@ -23,6 +23,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const handleLogout = useCallback(async () => {
     await apiLogout();
     setAuth({ status: "unauthenticated" });
+    window.location.assign("/");
   }, []);
 
   useEffect(() => {

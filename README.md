@@ -4,8 +4,7 @@ A GraphQL-powered task manager built on GitHub Issues, demonstrating modern full
 
 > **Status:** Portfolio project. Full OAuth, optimistic UI, E2E tested, deployed.
 
-**Live demo:** [coming soon]
-**Repo:** https://github.com/sohelreza/taskflow
+**Live demo:** https://taskflow-iota-ochre.vercel.app
 
 ---
 
