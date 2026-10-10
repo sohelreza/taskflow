@@ -2,6 +2,7 @@ import { ApolloProvider } from "@apollo/client/react";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { onCLS, onFCP, onINP, onLCP, onTTFB } from "web-vitals";
 import "./index.css";
 import { apolloClient } from "./lib/apollo";
 import { AuthProvider } from "./lib/AuthContext";
@@ -23,3 +24,11 @@ createRoot(document.getElementById("root")!).render(
     </AuthProvider>
   </StrictMode>,
 );
+
+if (import.meta.env.DEV) {
+  onCLS(console.log);
+  onINP(console.log);
+  onLCP(console.log);
+  onFCP(console.log);
+  onTTFB(console.log);
+}

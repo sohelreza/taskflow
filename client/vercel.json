@@ -1,3 +1,26 @@
 {
-  "rewrites": [{ "source": "/((?!.*\\.).*)", "destination": "/index.html" }]
+  "rewrites": [{ "source": "/((?!.*\\.).*)", "destination": "/index.html" }],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://avatars.githubusercontent.com https://*.githubusercontent.com; connect-src 'self' https://taskflow-server-o0ez.onrender.com https://api.github.com; font-src 'self' data:; frame-ancestors 'none'; form-action 'self' https://taskflow-server-o0ez.onrender.com; base-uri 'self'; object-src 'none'"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    }
+  ]
 }

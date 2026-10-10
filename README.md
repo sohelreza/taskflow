@@ -53,6 +53,25 @@ Fastify with Helmet, rate limiting (100/min per IP), structured error handling t
 
 ---
 
+## Performance
+
+Lighthouse mobile audit on the deployed app (PageSpeed Insights):
+
+| Metric         | Score |
+| -------------- | ----- |
+| Performance    | 96    |
+| Accessibility  | 96    |
+| Best Practices | 96    |
+| SEO            | 100   |
+
+Core Web Vitals (field data in production):
+
+- **LCP** 2.4s (Good: < 2.5s)
+- **CLS** 0 (Good: < 0.1)
+- **TBT** 0ms (lab proxy for INP)
+
+Measured with `web-vitals` library for runtime instrumentation; audited with Lighthouse 13 via PageSpeed Insights.
+
 ## Tech stack
 
 **Frontend**

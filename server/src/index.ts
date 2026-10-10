@@ -89,6 +89,7 @@ app.addHook("onSend", async (_request, reply) => {
       "frame-ancestors 'none'",
       "form-action 'self'",
       "base-uri 'self'",
+      "object-src 'none'",
     ].join("; "),
   );
 });
