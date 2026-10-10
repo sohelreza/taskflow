@@ -3,9 +3,11 @@ export type AuthState =
   | { status: "authenticated"; login: string }
   | { status: "unauthenticated" };
 
+const SERVER_URL = import.meta.env.VITE_SERVER_URL ?? "";
+
 export async function fetchAuthState(): Promise<AuthState> {
   try {
-    const response = await fetch("/auth/me", {
+    const response = await fetch(`${SERVER_URL}/auth/me`, {
       credentials: "include",
     });
     if (response.status === 401) {
@@ -28,7 +30,7 @@ export async function fetchAuthState(): Promise<AuthState> {
 }
 
 export async function logout(): Promise<void> {
-  await fetch("/auth/logout", {
+  await fetch(`${SERVER_URL}/auth/logout`, {
     method: "POST",
     credentials: "include",
   });

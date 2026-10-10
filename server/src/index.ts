@@ -23,6 +23,7 @@ const COOKIE_SECRET = process.env.COOKIE_SECRET;
 const FRONTEND_URL = process.env.FRONTEND_URL ?? "http://localhost:5173";
 const TEST_MODE = process.env.TEST_MODE === "true";
 const COOKIE_SECURE = process.env.NODE_ENV === "production";
+const COOKIE_SAMESITE = process.env.NODE_ENV === "production" ? "none" : "lax";
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:4000";
 
 const requiredEnv = {
@@ -142,7 +143,7 @@ app.get("/auth/login", async (_request, reply) => {
     path: "/",
     httpOnly: true,
     secure: COOKIE_SECURE,
-    sameSite: "lax",
+    sameSite: COOKIE_SAMESITE,
     signed: true,
     maxAge: 600,
   });
@@ -151,7 +152,7 @@ app.get("/auth/login", async (_request, reply) => {
     path: "/",
     httpOnly: true,
     secure: COOKIE_SECURE,
-    sameSite: "lax",
+    sameSite: COOKIE_SAMESITE,
     signed: true,
     maxAge: 600,
   });
@@ -265,7 +266,7 @@ app.get<{ Querystring: { code?: string; state?: string; error?: string } }>(
       path: "/",
       httpOnly: true,
       secure: COOKIE_SECURE,
-      sameSite: "lax",
+      sameSite: COOKIE_SAMESITE,
       signed: true,
       maxAge: 60 * 60 * 24 * 7,
     });
@@ -293,7 +294,7 @@ if (TEST_MODE) {
         path: "/",
         httpOnly: true,
         secure: COOKIE_SECURE,
-        sameSite: "lax",
+        sameSite: COOKIE_SAMESITE,
         signed: true,
         maxAge: 60 * 60 * 24 * 7,
       });

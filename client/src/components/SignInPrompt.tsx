@@ -22,7 +22,7 @@ export function SignInPrompt({ errorMessage }: Readonly<SignInPromptProps>) {
         )}
 
         <div>
-          <a href="/auth/login">
+          <a href={`${import.meta.env.VITE_SERVER_URL ?? ""}/auth/login`}>
             <Button size="lg" className="w-full">
               Sign in with GitHub
             </Button>
