@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build server
+        run: npm run build --workspace=server
+
+      - name: Create server test env
+        run: |
+          cat > server/.env.test <<EOF
+          PORT=4000
+          GITHUB_OAUTH_CLIENT_ID=ci-test-client-id
+          GITHUB_OAUTH_CLIENT_SECRET=ci-test-client-secret
+          COOKIE_SECRET=ci_test_cookie_secret_at_least_32_characters_long_placeholder
+          FRONTEND_URL=http://localhost:5173
+          TEST_MODE=true
+          EOF
+
+      - name: Build client
+        run: npm run build --workspace=client
+
+      - name: Run Cypress
+        uses: cypress-io/github-action@v6
+        with:
+          working-directory: client
+          start: |
+            npm run dev:test --workspace=server
+            npm run dev --workspace=client
+          wait-on: "http://localhost:5173, http://localhost:4000/health"
+          wait-on-timeout: 120
