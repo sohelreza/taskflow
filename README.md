@@ -8,6 +8,8 @@ A GraphQL-powered task manager built on GitHub Issues, demonstrating modern full
 
 **Live demo:** https://taskflow-iota-ochre.vercel.app
 
+**Note on the demo:** Chrome's Safe Browsing occasionally flags the backend's `*.onrender.com` subdomain because free-tier Render URLs share reputation across all free projects. If you see a "Dangerous site" warning after clicking "Sign in with GitHub," it's a false positive — click **Advanced → Proceed to taskflow-server-o0ez.onrender.com** to continue. A production deployment would use a custom domain to avoid this.
+
 ---
 
 ## What this is
@@ -102,7 +104,7 @@ Measured with `web-vitals` library for runtime instrumentation; audited with Lig
 **Infra**
 
 - npm workspaces monorepo
-- [Deployment platforms — filled in Commit 51]
+- Server: Render (free tier, cold start on inactivity; shared `onrender.com` subdomain occasionally triggers Chrome Safe Browsing — fix is a custom domain)
 
 ---
 
