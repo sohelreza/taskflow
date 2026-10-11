@@ -22,6 +22,10 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install Cypress binary
+        run: npx cypress install
+        working-directory: client
+
       - name: Build server
         run: npm run build --workspace=server
 
@@ -36,15 +40,25 @@ jobs:
           TEST_MODE=true
           EOF
 
-      - name: Build client
-        run: npm run build --workspace=client
+      - name: Start server
+        run: npm run dev:test --workspace=server &
+        env:
+          NODE_ENV: test
 
-      - name: Run Cypress
-        uses: cypress-io/github-action@v6
+      - name: Start client
+        run: npm run dev --workspace=client &
+
+      - name: Wait for services
+        run: npx wait-on http://localhost:5173 http://localhost:4000/health --timeout 120000
+
+      - name: Run Cypress tests
+        run: npx cypress run
+        working-directory: client
+
+      - name: Upload failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
         with:
-          working-directory: client
-          start: |
-            npm run dev:test --workspace=server
-            npm run dev --workspace=client
-          wait-on: "http://localhost:5173, http://localhost:4000/health"
-          wait-on-timeout: 120
+          name: cypress-screenshots
+          path: client/cypress/screenshots
+          if-no-files-found: ignore
