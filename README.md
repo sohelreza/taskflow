@@ -1,5 +1,7 @@
 # TaskFlow
 
+![CI](https://github.com/sohelreza/taskflow/workflows/CI/badge.svg)
+
 A GraphQL-powered task manager built on GitHub Issues, demonstrating modern full-stack patterns in React 19, Apollo Client v4, and a Fastify BFF.
 
 > **Status:** Portfolio project. Full OAuth, optimistic UI, E2E tested, deployed.
